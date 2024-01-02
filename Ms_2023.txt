@@ -1,0 +1,540 @@
+# part 1 of 3
+#### fw ####
+attach(data)
+aov.res_fw <- aov( fw~ 
+                       Fer + 
+                       Irr + 
+                       Fer:Irr)
+#####First factor variable (factor A)
+duncan_A_fw = duncan.test(y = fw,
+                             trt = Fer,
+                             DFerror = aov.res_fw$df.residual,
+                             MSerror = deviance(aov.res_fw)/aov.res_fw$df.residual,
+                             alpha = 0.05,
+                             group = TRUE,
+                             console = TRUE)
+#####Second factor variable (factor B)
+duncan_B_fw = duncan.test(y = fw,
+                             trt = Irr,
+                             DFerror = aov.res_fw$df.residual,
+                             MSerror = deviance(aov.res_fw)/aov.res_fw$df.residual,
+                             alpha = 0.05,
+                             group = TRUE,
+                             console = TRUE)
+# Interaction effects
+duncan_AB_fw = duncan.test(y = fw,
+                              trt = Fer:Irr,
+                              DFerror = aov.res_fw$df.residual,
+                              MSerror = deviance(aov.res_fw)/aov.res_fw$df.residual,
+                              alpha = 0.05,
+                              group = TRUE,
+                              console = TRUE)
+# Ascending order of groups for lettering in bargraph
+## Ascending order of duncan$group for factor A
+ascend_A_fw = duncan_A_fw$groups %>%
+  group_by(rownames(duncan_A_fw$groups)) %>%
+  arrange(rownames(duncan_A_fw$groups)) 
+
+## Ascending order of duncan$group for factor B
+ascend_B_fw = duncan_B_fw$groups %>%
+  group_by(rownames(duncan_B_fw$groups)) %>%
+  arrange(rownames(duncan_B_fw$groups)) 
+
+## Ascending order of duncan$group for interaction
+ascend_AB_fw = duncan_AB_fw$groups %>%
+  group_by(rownames(duncan_AB_fw$groups)) %>%
+  arrange(rownames(duncan_AB_fw$groups))
+
+####
+# Visualizing effects
+####
+# Getting mean and SE as data frame
+## Main effects
+#####Mean and SE for first factor (Factor A)
+MeanSE_A_fw = data %>%
+  group_by(Fer) %>%
+  summarise(avg_A = mean(fw),
+            se = sd(fw)/sqrt(length(fw)))
+attach(MeanSE_A_fw)
+#####Mean and SE for second factor (Factor B)
+MeanSE_B_fw = data %>%
+  group_by(Irr) %>%
+  summarise(avg_B = mean(fw),
+            se = sd(fw)/sqrt(length(fw)))
+attach(MeanSE_B_fw)
+## Mean and SE for interaction effect (AxB)
+MeanSE_AB_fw = data %>%
+  group_by(Fer, Irr) %>%
+  summarise(avg_AB = mean(fw),
+            se = sd(fw)/sqrt(length(fw)))
+attach(MeanSE_AB_fw)
+#### Plotting main effects ####
+# For first factor (Factor A = Fer)
+pA_fw = ggplot(MeanSE_A_fw, aes(x = Fer,
+                                      y = avg_A))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9),
+           width = 0.8) +
+  geom_errorbar(aes(ymax = avg_A + se,
+                    ymin = avg_A - se), 
+                position = position_dodge(width=0.9), 
+                width = 0.25) +
+  labs(x=NULL,
+       y = NULL) +
+  geom_text(aes(x = Fer,
+                y = avg_A + se,
+                label = as.matrix(ascend_A_fw$groups)),
+            position = position_dodge(width = 0.9),vjust = -(0.5))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)))+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+ #删除所有x轴标签
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=6)) + # 图例字体格式、颜色和大小
+  theme(legend.position = c(0.95,0.9), legend.background = element_blank())# vjust = 1 (top)
+ggsave(filename = "pA_fw.png", # 保存的图片文件名及格式
+       plot=pA_fw,
+       path = ("./image/2023"),
+       width = 6, height = 8, units = "cm", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 600) # 图片分辨率
+#### For second factor (Factor B = Irr) ####
+pB_fw = ggplot(MeanSE_B_fw, aes(x = Irr,
+                                      y = avg_B))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9),
+           width = 0.8) +
+  geom_errorbar(aes(ymax = avg_B + se,
+                    ymin = avg_B - se), 
+                position = position_dodge(width=0.9), 
+                width = 0.25) +
+  labs(x = NULL,
+       y = NULL) +
+  geom_text(aes(x = Irr,
+                y = avg_B + se,
+                label = as.matrix(ascend_B_fw$groups)),
+            position = position_dodge(width = 0.9),
+            vjust = -(0.5))+         # vjust = 1 (top)
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)))+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+ #删除所有x轴标签
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=6)) + # 图例字体格式、颜色和大小
+  theme(legend.position = c(0.95,0.9), legend.background = element_blank())
+ggsave(filename = "pB_fw.png", # 保存的图片文件名及格式
+       plot=pB_fw,
+       path = ("./image/2023"),
+       width = 6, height = 8, units = "cm", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 600) # 图片分辨率)
+#### For interaction factor ####
+pAB_fw = ggplot(MeanSE_AB_fw, aes(x = Irr,
+                                        y = avg_AB,
+                                        fill = factor(Fer)))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9)) +
+  geom_errorbar(aes(ymax = avg_AB + se,
+                    ymin = avg_AB - se), 
+                position = position_dodge(width =0.9), 
+                width = 0.5) +
+  labs(x = "Irrigation Level",
+       y = bquote('Fresh weight ('*kg/ha*')'),) +
+  scale_fill_hue(labels=c("F1","F2","F3","F4","F5"))+
+  geom_text(aes(x = Irr,
+                y = avg_AB + se,
+                label = as.matrix(ascend_AB_fw$groups)),
+            position = position_dodge(width = 0.9),
+            vjust = -(0.5))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.2,colour = "black"))+
+  scale_y_continuous(limits=c(0,20000),expand = expansion(mult = c(0,0.1)))+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+ #去掉所有x轴标签
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=7.5)) + # 图例字体格式、颜色和大小
+  theme(legend.position = "none", legend.background = element_blank())+
+  scale_fill_manual(values = cols)#设置图例位置和背景
+ggsave(filename = "pAB_fw.png", # 保存的图片文件名及格式
+       plot=pAB_fw,
+       path = ("./image/2023"),
+       width = 8.17, height = 6.13, units = "in", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 1200) # 图片分辨率
+
+
+
+# part 2 pf 3
+#### hay ####
+attach(data)
+aov.res_hay <- aov(hay ~ 
+                     Fer + 
+                     Irr + 
+                     Fer:Irr)
+#####First factor variable (factor A)
+duncan_A_hay = duncan.test(y = hay,
+                           trt = Fer,
+                           DFerror = aov.res_hay$df.residual,
+                           MSerror = deviance(aov.res_hay)/aov.res_hay$df.residual,
+                           alpha = 0.05,
+                           group = TRUE,
+                           console = TRUE)
+#####Second factor variable (factor B)
+duncan_B_hay = duncan.test(y = hay,
+                           trt = Irr,
+                           DFerror = aov.res_hay$df.residual,
+                           MSerror = deviance(aov.res_hay)/aov.res_hay$df.residual,
+                           alpha = 0.05,
+                           group = TRUE,
+                           console = TRUE)
+# Interaction effects
+duncan_AB_hay = duncan.test(y = hay,
+                            trt = Fer:Irr,
+                            DFerror = aov.res_hay$df.residual,
+                            MSerror = deviance(aov.res_hay)/aov.res_hay$df.residual,
+                            alpha = 0.05,
+                            group = TRUE,
+                            console = TRUE)
+# Ascending order of groups for lettering in bargraph
+## Ascending order of duncan$group for factor A
+ascend_A_hay = duncan_A_hay$groups %>%
+  group_by(rownames(duncan_A_hay$groups)) %>%
+  arrange(rownames(duncan_A_hay$groups)) 
+
+## Ascending order of duncan$group for factor B
+ascend_B_hay = duncan_B_hay$groups %>%
+  group_by(rownames(duncan_B_hay$groups)) %>%
+  arrange(rownames(duncan_B_hay$groups)) 
+
+## Ascending order of duncan$group for interaction
+ascend_AB_hay = duncan_AB_hay$groups %>%
+  group_by(rownames(duncan_AB_hay$groups)) %>%
+  arrange(rownames(duncan_AB_hay$groups))
+
+####
+# Visualizing effects
+####
+# Getting mean and SE as data frame
+## Main effects
+#####Mean and SE for first factor (Factor A)
+MeanSE_A_hay = data %>%
+  group_by(Fer) %>%
+  summarise(avg_A = mean(hay),
+            se = sd(hay)/sqrt(length(hay)))
+attach(MeanSE_A_hay)
+#####Mean and SE for second factor (Factor B)
+MeanSE_B_hay = data %>%
+  group_by(Irr) %>%
+  summarise(avg_B = mean(hay),
+            se = sd(hay)/sqrt(length(hay)))
+attach(MeanSE_B_hay)
+## Mean and SE for interaction effect (AxB)
+MeanSE_AB_hay = data %>%
+  group_by(Fer, Irr) %>%
+  summarise(avg_AB = mean(hay),
+            se = sd(hay)/sqrt(length(hay)))
+attach(MeanSE_AB_hay)
+#### Plotting main effects ####
+# For first factor (Factor A = Fer)
+pA_hay = ggplot(MeanSE_A_hay, aes(x = Fer,
+                                  y = avg_A))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9),
+           width = 0.8) +
+  geom_errorbar(aes(ymax = avg_A + se,
+                    ymin = avg_A - se), 
+                position = position_dodge(width=0.9), 
+                width = 0.25) +
+  labs(x = "Fertilizer Level",
+       y = NULL) +
+  geom_text(aes(x = Fer,
+                y = avg_A + se,
+                label = as.matrix(ascend_A_hay$groups)),
+            position = position_dodge(width = 0.9),vjust = -(0.5))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)))+
+  theme(axis.text.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +  
+  theme(axis.title.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=6)) + # 图例字体格式、颜色和大小
+  theme(legend.position = c(0.95,0.9), legend.background = element_blank())# vjust = 1 (top)
+ggsave(filename = "pA_hay.png", # 保存的图片文件名及格式
+       plot=pA_hay,
+       path = ("./image/2023"),
+       width = 6, height = 8, units = "cm", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 600) # 图片分辨率
+#### For second factor (Factor B = Irr) ####
+pB_hay = ggplot(MeanSE_B_hay, aes(x = Irr,
+                                  y = avg_B))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9)) +
+  geom_errorbar(aes(ymax = avg_B + se,
+                    ymin = avg_B - se), 
+                position = position_dodge(width=0.9), 
+                width = 0.25) +
+  labs(x = "Irrigation Level",
+       y = NULL) +
+  geom_text(aes(x = Irr,
+                y = avg_B + se,
+                label = as.matrix(ascend_B_hay$groups)),
+            position = position_dodge(width = 0.9),
+            vjust = -(0.5))+         # vjust = 1 (top)
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)))+
+  theme(axis.text.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +  
+  theme(axis.title.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=6)) + # 图例字体格式、颜色和大小
+  theme(legend.position = c(0.95,0.9), legend.background = element_blank())
+ggsave(filename = "pB_hay.png", # 保存的图片文件名及格式
+       plot=pB_hay,
+       path = ("./image/2023"),
+       width = 6, height = 8, units = "cm", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 600) # 图片分辨率)
+#### For interaction factor ####
+pAB_hay = ggplot(MeanSE_AB_hay, aes(x = Irr,
+                                    y = avg_AB,
+                                    fill = factor(Fer)))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9)) +
+  geom_errorbar(aes(ymax = avg_AB + se,
+                    ymin = avg_AB - se), 
+                position = position_dodge(width =0.9), 
+                width = 0.5) +
+  labs(x = "Irrigation Level",
+       y = bquote('Hay yield ('*kg/ha*')'),) +
+  scale_fill_hue(labels=c("F1","F2","F3","F4","F5"))+
+  geom_text(aes(x = Irr,
+                y = avg_AB + se,
+                label = as.matrix(ascend_AB_hay$groups)),
+            position = position_dodge(width = 0.9),
+            vjust = -(0.5))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(limits=c(0,4000),expand = expansion(mult = c(0,0.1)))+
+  theme(axis.text.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +  
+  theme(axis.title.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=7.5)) + # 图例字体格式、颜色和大小
+  theme(legend.position = "none", legend.background = element_blank())+
+  scale_fill_manual(values = cols)#设置图例位置和背景
+ggsave(filename = "pAB_hay.png", # 保存的图片文件名及格式
+       plot=pAB_hay,
+       path = ("./image/2023"),
+       width = 8.17, height = 6.13, units = "in", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 1200) # 图片分辨率
+
+
+
+
+# part 3 of 3
+#### IWUE ####
+attach(data)
+aov.res_IWUE <- aov( IWUE~ 
+                       Fer + 
+                       Irr + 
+                       Fer:Irr)
+#####First factor variable (factor A)
+duncan_A_IWUE = duncan.test(y = IWUE,
+                            trt = Fer,
+                            DFerror = aov.res_IWUE$df.residual,
+                            MSerror = deviance(aov.res_IWUE)/aov.res_IWUE$df.residual,
+                            alpha = 0.05,
+                            group = TRUE,
+                            console = TRUE)
+#####Second factor variable (factor B)
+duncan_B_IWUE = duncan.test(y = IWUE,
+                            trt = Irr,
+                            DFerror = aov.res_IWUE$df.residual,
+                            MSerror = deviance(aov.res_IWUE)/aov.res_IWUE$df.residual,
+                            alpha = 0.05,
+                            group = TRUE,
+                            console = TRUE)
+# Interaction effects
+duncan_AB_IWUE = duncan.test(y = IWUE,
+                             trt = Fer:Irr,
+                             DFerror = aov.res_IWUE$df.residual,
+                             MSerror = deviance(aov.res_IWUE)/aov.res_IWUE$df.residual,
+                             alpha = 0.05,
+                             group = TRUE,
+                             console = TRUE)
+# Ascending order of groups for lettering in bargraph
+## Ascending order of duncan$group for factor A
+ascend_A_IWUE = duncan_A_IWUE$groups %>%
+  group_by(rownames(duncan_A_IWUE$groups)) %>%
+  arrange(rownames(duncan_A_IWUE$groups)) 
+
+## Ascending order of duncan$group for factor B
+ascend_B_IWUE = duncan_B_IWUE$groups %>%
+  group_by(rownames(duncan_B_IWUE$groups)) %>%
+  arrange(rownames(duncan_B_IWUE$groups)) 
+
+## Ascending order of duncan$group for interaction
+ascend_AB_IWUE = duncan_AB_IWUE$groups %>%
+  group_by(rownames(duncan_AB_IWUE$groups)) %>%
+  arrange(rownames(duncan_AB_IWUE$groups))
+
+####
+# Visualizing effects
+####
+# Getting mean and SE as data frame
+## Main effects
+#####Mean and SE for first factor (Factor A)
+MeanSE_A_IWUE = data %>%
+  group_by(Fer) %>%
+  summarise(avg_A = mean(IWUE),
+            se = sd(IWUE)/sqrt(length(IWUE)))
+attach(MeanSE_A_IWUE)
+#####Mean and SE for second factor (Factor B)
+MeanSE_B_IWUE = data %>%
+  group_by(Irr) %>%
+  summarise(avg_B = mean(IWUE),
+            se = sd(IWUE)/sqrt(length(IWUE)))
+attach(MeanSE_B_IWUE)
+## Mean and SE for interaction effect (AxB)
+MeanSE_AB_IWUE = data %>%
+  group_by(Fer, Irr) %>%
+  summarise(avg_AB = mean(IWUE),
+            se = sd(IWUE)/sqrt(length(IWUE)))
+attach(MeanSE_AB_IWUE)
+#### Plotting main effects ####
+# For first factor (Factor A = Fer)
+pA_IWUE = ggplot(MeanSE_A_IWUE, aes(x = Fer,
+                                    y = avg_A))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9),
+           width = 0.8) +
+  geom_errorbar(aes(ymax = avg_A + se,
+                    ymin = avg_A - se), 
+                position = position_dodge(width=0.9), 
+                width = 0.25) +
+  labs(x='Fertilizer Level',
+       y = NULL) +
+  geom_text(aes(x = Fer,
+                y = avg_A + se,
+                label = as.matrix(ascend_A_IWUE$groups)),
+            position = position_dodge(width = 0.9),vjust = -(0.5))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)))+
+theme(axis.text.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +  
+  theme(axis.title.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=6)) + # 图例字体格式、颜色和大小
+  theme(legend.position = c(0.95,0.9), legend.background = element_blank())# vjust = 1 (top)
+ggsave(filename = "pA_IWUE.png", # 保存的图片文件名及格式
+       plot=pA_IWUE,
+       path = ("./image/2023"),
+       width = 6, height = 8, units = "cm", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 600) # 图片分辨率
+#### For second factor (Factor B = Irr) ####
+pB_IWUE = ggplot(MeanSE_B_IWUE, aes(x = Irr,
+                                    y = avg_B))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9),
+           width = 0.8) +
+  geom_errorbar(aes(ymax = avg_B + se,
+                    ymin = avg_B - se), 
+                position = position_dodge(width=0.9), 
+                width = 0.25) +
+  labs(x = 'Irrigation Level',
+       y = NULL) +
+  geom_text(aes(x = Irr,
+                y = avg_B + se,
+                label = as.matrix(ascend_B_IWUE$groups)),
+            position = position_dodge(width = 0.9),
+            vjust = -(0.5))+         # vjust = 1 (top)
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)))+
+  theme(axis.text.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +  
+  theme(axis.title.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=6)) + # 图例字体格式、颜色和大小
+  theme(legend.position = c(0.95,0.9), legend.background = element_blank())
+ggsave(filename = "pB_IWUE.png", # 保存的图片文件名及格式
+       plot=pB_IWUE,
+       path = ("./image/2023"),
+       width = 6, height = 8, units = "cm", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 600) # 图片分辨率)
+#### For interaction factor ####
+pAB_IWUE = ggplot(MeanSE_AB_IWUE, aes(x = Irr,
+                                      y = avg_AB,
+                                      fill = factor(Fer)))+
+  geom_bar(stat = "identity",
+           color = "black",
+           position = position_dodge(width=0.9)) +
+  geom_errorbar(aes(ymax = avg_AB + se,
+                    ymin = avg_AB - se), 
+                position = position_dodge(width =0.9), 
+                width = 0.5) +
+  labs(x = "Irrigation Level",
+       y = bquote('IWUE ('*kg/mm*')'),) +
+  scale_fill_hue(labels=c("F1","F2","F3","F4","F5"))+
+  geom_text(aes(x = Irr,
+                y = avg_AB + se,
+                label = as.matrix(ascend_AB_IWUE$groups)),
+            position = position_dodge(width = 0.9),
+            vjust = -(0.5))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.line =element_line(size=0.5,colour = "black"))+
+  scale_y_continuous(limits=c(0,32),expand = expansion(mult = c(0,0.1)))+
+  theme(axis.text.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +  
+  theme(axis.title.x = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.text.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(axis.title.y = element_text(size = 12, color = "black", face = "bold", family = "f1")) +
+  theme(legend.title = element_blank())+
+  theme(legend.text = element_text(face="bold", family="f1", colour="black",size=7.5)) + # 图例字体格式、颜色和大小
+  theme(legend.position = "none", legend.background = element_blank())+
+  scale_fill_manual(values = cols)#设置图例位置和背景
+ggsave(filename = "pAB_IWUE.png", # 保存的图片文件名及格式
+       plot=pAB_IWUE,
+       path = ("./image/2023"),
+       width = 8.72, height = 6.13, units = "in", # 图片宽度、高度和单位，默认输出当前图形的大小，单位英寸。
+       dpi = 1200) # 图片分辨率
